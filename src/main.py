@@ -1,20 +1,29 @@
-#Conceptual execution abstraction
-def run_reconcilation_cycle():
-    #1 Fetch raw messages
-    raw_emails = gmail_client.fetch_unreconciled_messages()
+# src/main.py
 
-    for email in raw_emails:
-        #2. Convert raw MIME bytes to structured data via Gemini
-        pdf_bytes = gmail_client.extract_pdf(email)
-        extracted_data = gemini_client.analyze_invoice_pdf(pdf_bytes)
+from connectors.google_gmail import (
+    get_gmail_service,
+    fetch_unreconciled_emails,
+    download_pdf_attachments
+)
 
-        #3. Process data arrays through our business rules matrix
-        validation_status = guardrails.evaluate_compliance(extracted_data)
+def run_reconciliation_pipeline():
+    print("==================================================")
+    print("   LAUNCHING AP RECONCILIATION AGENT CORE CYCLE   ")
+    print("==================================================")
 
-        #4. Route execution flow based on results
-        if validation_status.is_valid:
-            qbo_ledger.apply_remittance(extracted_data)
-            gmail_client.appy_reconciled_label(email)
-        else:
-            qbo_ledger.route_to_unapplied_cash(extracted_data)
-            gmail_client.alert_human_operator(validation_status.error)
+    # Phase 1: Ingestion & Environment Bootstrapping
+    try:
+        gmail_service = get_gmail_service()
+        candidate_emails = fetch_unreconciled_emails(gmail_service)
+
+        for email in candidate_emails:
+            download_pdf_attachments(gmail_service, email)
+
+        print("\n[SYSTEM] Phase 1 execution cycle completed successfully.")
+
+    except Exception as e:
+        print(f"\n[CRITICAL ERROR] Pipeline execution aborted: {e}")
+        # In later phases, this is where our automated alert system catches general faults
+
+if __name__ == "__main__":
+    run_reconciliation_pipeline()
