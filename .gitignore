@@ -4,6 +4,7 @@
 .env
 credentials.json
 token.json
+qbo_token.json
 
 # ==============================================================================
 # Local Storage, State & Data Sandbox
